@@ -1,4 +1,5 @@
 using HarmonyLib;
+using System.Collections.Generic;
 
 namespace BuildPriorityKeys
 {
@@ -10,11 +11,15 @@ namespace BuildPriorityKeys
     [HarmonyPatch(typeof(KScreen))]
     public class KScreen_Patch
     {
+        public static HashSet< MaterialSelectionPanel > interceptNumberKeysForPriority
+            = new HashSet< MaterialSelectionPanel >();
+
         [HarmonyPrefix]
         [HarmonyPatch(nameof(OnKeyDown))]
         public static bool OnKeyDown(KScreen __instance, KButtonEvent e)
         {
-            if(!(__instance is MaterialSelectionPanel))
+            MaterialSelectionPanel panel = __instance as MaterialSelectionPanel;
+            if( panel == null || !interceptNumberKeysForPriority.Contains( panel ))
                 return true;
             Action action = e.GetAction();
             if (Action.Plan1 <= action && action <= Action.Plan10 && e.TryConsume(action))
@@ -22,13 +27,13 @@ namespace BuildPriorityKeys
                 int num = (int)(action - 36 + 1);
                 if (num <= 9)
                 {
-                    (__instance as MaterialSelectionPanel).PriorityScreen
-                        .SetScreenPriority(new PrioritySetting(PriorityScreen.PriorityClass.basic, num), play_sound: true);
+                    panel.PriorityScreen.SetScreenPriority(
+                        new PrioritySetting(PriorityScreen.PriorityClass.basic, num), play_sound: true);
                 }
                 else
                 {
-                    (__instance as MaterialSelectionPanel).PriorityScreen
-                        .SetScreenPriority(new PrioritySetting(PriorityScreen.PriorityClass.topPriority, 1), play_sound: true);
+                    panel.PriorityScreen.SetScreenPriority(
+                        new PrioritySetting(PriorityScreen.PriorityClass.topPriority, 1), play_sound: true);
                 }
             }
             return !e.Consumed;
@@ -38,7 +43,8 @@ namespace BuildPriorityKeys
         [HarmonyPatch(nameof(OnKeyUp))]
         public static bool OnKeyUp(KScreen __instance, KButtonEvent e)
         {
-            if(!(__instance is MaterialSelectionPanel))
+            MaterialSelectionPanel panel = __instance as MaterialSelectionPanel;
+            if( panel == null || !interceptNumberKeysForPriority.Contains( panel ))
                 return true;
             Action action = e.GetAction();
             if (Action.Plan1 <= action && action <= Action.Plan10)
@@ -55,10 +61,23 @@ namespace BuildPriorityKeys
         [HarmonyPatch(nameof(GetSortKey))]
         public static bool GetSortKey(KScreen __instance, ref float __result)
         {
-            if(!(__instance is MaterialSelectionPanel))
+            MaterialSelectionPanel panel = __instance as MaterialSelectionPanel;
+            if( panel == null )
                 return true;
             __result = 3f;
             return false;
         }
     }
+
+    [HarmonyPatch(typeof(MaterialSelectionPanel))]
+    public class MaterialSelectionPanel_Patch
+    {
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(OnPrefabInit))]
+        public static void OnPrefabInit(MaterialSelectionPanel __instance)
+        {
+            KScreen_Patch.interceptNumberKeysForPriority.Add( __instance );
+        }
+    }
+
 }
