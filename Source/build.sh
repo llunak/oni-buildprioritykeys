@@ -6,4 +6,4 @@ if test $? -eq 0; then
     rm -f $(ls -1 ../*.dll | grep -v BuildPriorityKeys)
 fi
 version=$(cat BuildPriorityKeys.csproj | grep AssemblyVersion | sed 's#.*<AssemblyVersion>\(.*\)</AssemblyVersion>.*#\1#')
-sed -i "s/VERSION_HERE/$version/" ../mod_info.yaml
+sed -i "s/version: .*/version: $version/" ../mod_info.yaml
