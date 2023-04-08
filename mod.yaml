@@ -1,0 +1,3 @@
+title: "Build Priority Keys"
+description: "Pressing number keys will set priority when build menu is already open"
+staticID: "llunak.BuildPriorityKeys"
